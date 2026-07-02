@@ -1,0 +1,75 @@
+#version: '3.8'
+
+services:
+  database:
+    image: postgres:15-alpine
+    container_name: infra_postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: meu_banco
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - infra_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: infra_frontend
+    networks:
+      - infra_network
+    depends_on:
+      - database
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: infra_backend
+    networks:
+      - infra_network
+    depends_on:
+      - database
+
+  # Nginx Atualizado
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: infra_nginx_proxy
+    ports:
+      - "80:80"
+      - "443:443" # <-- Nova porta para HTTPS
+    volumes:
+      # Volumes compartilhados com o Certbot para ler os certificados criados
+      - certbot_etc:/etc/letsencrypt
+      - certbot_var:/var/lib/letsencrypt
+      - webroot_path:/var/www/certbot
+    networks:
+      - infra_network
+    depends_on:
+      - frontend
+      - backend
+
+  # Certbot - O responsável por gerar e renovar o SSL
+  certbot:
+    image: certbot/certbot
+    container_name: infra_certbot
+    volumes:
+      - certbot_etc:/etc/letsencrypt
+      - certbot_var:/var/lib/letsencrypt
+      - webroot_path:/var/www/certbot
+    # O comando abaixo verifica e renova o certificado a cada 12 horas, se necessário
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+networks:
+  infra_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  certbot_etc:
+  certbot_var:
+  webroot_path:
