@@ -1,0 +1,5 @@
+- name: Docker Version
+  run: docker version
+
+- name: Docker Info
+  run: docker info
