@@ -1,13 +1,11 @@
-#version: '3.8'
-
 services:
   database:
     image: postgres:15-alpine
     container_name: infra_postgres
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: meu_banco
+      POSTGRES_USER: infra-control
+      POSTGRES_PASSWORD: J0a8HyEk4¨$@n1Akl¨*
+      POSTGRES_DB: db_infra
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -15,7 +13,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./front1
       dockerfile: Dockerfile
     container_name: infra_frontend
     networks:
@@ -25,7 +23,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./back1
       dockerfile: Dockerfile
     container_name: infra_backend
     networks:
