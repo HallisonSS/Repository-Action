@@ -1,73 +1,61 @@
+#version: '3.8'
+
 services:
+  # Banco de Dados
   database:
     image: postgres:15-alpine
     container_name: infra_postgres
     environment:
-      POSTGRES_USER: infra-control
-      POSTGRES_PASSWORD: J0a8HyEk4¨$@n1Akl¨*
+      POSTGRES_USER: infra_user
+      POSTGRES_PASSWORD: my_infra_password
       POSTGRES_DB: db_infra
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgresql_dbase:/var/lib/postgresql/data
     networks:
       - infra_network
 
+  # Frontend (usa o Dockerfile da sua foto)
   frontend:
     build:
-      context: ./front1
+      context: ./front
       #dockerfile: Dockerfile
     container_name: infra_frontend
+    # Não expomos a porta para o seu PC, apenas para a rede interna
     networks:
       - infra_network
     depends_on:
       - database
 
+  # Backend
   backend:
     build:
-      context: ./back1
-      #dockerfile: Dockerfile
+      context: ./back
+      *dockerfile: Dockerfile
     container_name: infra_backend
+    environment:
+      - DATABASE_URL=postgres://user:password@database:5432/meu_banco
     networks:
       - infra_network
     depends_on:
       - database
 
-  # Nginx Atualizado
+  # Nginx - A Única Porta de Entrada do usuário
   nginx:
     build:
       context: ./nginx
       dockerfile: Dockerfile
     container_name: infra_nginx_proxy
     ports:
-      - "80:80"
-      - "443:443" # <-- Nova porta para HTTPS
-    volumes:
-      # Volumes compartilhados com o Certbot para ler os certificados criados
-      - certbot_etc:/etc/letsencrypt
-      - certbot_var:/var/lib/letsencrypt
-      - webroot_path:/var/www/certbot
+      - "80:80" # Expõe a porta 80 para a sua máquina local
     networks:
       - infra_network
     depends_on:
       - frontend
       - backend
 
-  # Certbot - O responsável por gerar e renovar o SSL
-  certbot:
-    image: certbot/certbot
-    container_name: infra_certbot
-    volumes:
-      - certbot_etc:/etc/letsencrypt
-      - certbot_var:/var/lib/letsencrypt
-      - webroot_path:/var/www/certbot
-    # O comando abaixo verifica e renova o certificado a cada 12 horas, se necessário
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-
 networks:
   infra_network:
     driver: bridge
 
 volumes:
-  postgres_data:
-  certbot_etc:
-  certbot_var:
-  webroot_path:
+  postgresql_dbase:
