@@ -37,7 +37,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            docker pull ubuntu/backend
-            docker pull ubuntu/frontend
+            docker pull jhoninfracontrol/backend
+            docker pull jhoninfracontrol/frontend
             docker-compose down
             docker-compose up -d
